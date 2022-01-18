@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nuzurie/shopify/domain"
 	"github.com/nuzurie/shopify/utils/errors"
+	"github.com/google/uuid"
 	"log"
 	"reflect"
 	"time"
@@ -50,6 +51,7 @@ func (i *itemUseCase) Create(ctx context.Context, item *domain.Item) (*domain.It
 	c, cancel := context.WithTimeout(ctx, i.timeout)
 	defer cancel()
 
+	item.ID = uuid.NewString()
 	createdItem, err := i.itemRepository.Save(c, item)
 	if err != nil {
 		log.Println(fmt.Sprintf("Failed to create item %s at %s", item.ID, time.Now()))
@@ -71,6 +73,7 @@ func (i *itemUseCase) Update(ctx context.Context, item *domain.Item) (*domain.It
 		return nil, errors.NewBadRequestError("no such item exists")
 	}
 
+	item.UpdatedAt = time.Now()
 	var updated *domain.Item
 	updated, err = i.itemRepository.Edit(c, item)
 	if err != nil {
