@@ -36,6 +36,6 @@ func NewItemSpecification(name, description string,
 	return ItemSpecification{postgresQuery: query}
 }
 
-func (i ItemSpecification) PostgresQuery() string {
+func (i ItemSpecification) FilterQuery() string {
 	return i.postgresQuery
 }

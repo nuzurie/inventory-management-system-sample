@@ -20,11 +20,11 @@ func NewInventorySpecification(minQuantity, maxQuantity int, itemSpecification d
 		maxQuntityQuery = fmt.Sprintf("quantity<=%d", maxQuantity)
 	}
 
-	query := fmt.Sprintf("%s AND %s AND %s", itemSpecification.PostgresQuery(), minQuantityQuery, maxQuntityQuery)
+	query := fmt.Sprintf("%s AND %s AND %s", itemSpecification.FilterQuery(), minQuantityQuery, maxQuntityQuery)
 
 	return InventorySpecification{ItemSpecification: itemSpecification, postgresQuery: query}
 }
 
-func (i InventorySpecification) PostgresQuery() string {
+func (i InventorySpecification) FilterQuery() string {
 	return i.postgresQuery
 }
