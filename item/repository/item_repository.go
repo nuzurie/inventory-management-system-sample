@@ -13,15 +13,6 @@ type itemRepository struct {
 	db *pgxpool.Pool
 }
 
-/*
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Price       float64   `json:"price"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
- */
-
 const (
 	createItemTable = `CREATE TABLE IF NOT EXISTS item (
 	id text PRIMARY KEY,
