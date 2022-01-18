@@ -13,14 +13,14 @@ type InventoryItem struct {
 }
 
 type InventoryUseCase interface {
-	GetInventoryForItem(ctx context.Context, itemID string, count int, offset int) (*InventoryItem, error)
+	GetInventoryForItem(ctx context.Context, itemID string) (*InventoryItem, error)
 	GetAll(ctx context.Context, count int, offset int, filter Specification) ([]InventoryItem, error)
 	UpdateInventoryItem(ctx context.Context, item *InventoryItem) (*InventoryItem, error)
 	DeleteItem(ctx context.Context, item *InventoryItem) error
 }
 
 type InventoryRepository interface {
-	GetInventoryForItem(ctx context.Context, itemID string, count int, offset int) (*InventoryItem, error)
+	GetInventoryForItem(ctx context.Context, itemID string) (*InventoryItem, error)
 	GetAll(ctx context.Context, count int, offset int, filter Specification) ([]InventoryItem, error)
 	Save(ctx context.Context, item *InventoryItem) (*InventoryItem, error)
 	Edit(ctx context.Context, item *InventoryItem) (*InventoryItem, error)
