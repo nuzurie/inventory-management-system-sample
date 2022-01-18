@@ -3,17 +3,17 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/nuzurie/shopify/domain"
 	"github.com/nuzurie/shopify/utils/errors"
-	"github.com/google/uuid"
 	"log"
 	"reflect"
 	"time"
 )
 
 type itemUseCase struct {
-	itemRepository 	domain.ItemRepository
-	timeout 		time.Duration
+	itemRepository domain.ItemRepository
+	timeout        time.Duration
 }
 
 func NewItemUseCase(repository domain.ItemRepository, timeout time.Duration) domain.ItemUseCase {
@@ -27,6 +27,9 @@ func (i *itemUseCase) GetAll(ctx context.Context, count int, offset int, filter 
 	items, err := i.itemRepository.GetAll(c, count, offset, filter)
 	if err != nil {
 		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, errors.NewNotFoundError("no items found matching the specification")
 	}
 
 	return items, err
@@ -52,6 +55,7 @@ func (i *itemUseCase) Create(ctx context.Context, item *domain.Item) (*domain.It
 	defer cancel()
 
 	item.ID = uuid.NewString()
+	item.CreatedAt = time.Now()
 	createdItem, err := i.itemRepository.Save(c, item)
 	if err != nil {
 		log.Println(fmt.Sprintf("Failed to create item %s at %s", item.ID, time.Now()))

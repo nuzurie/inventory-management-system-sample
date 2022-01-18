@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nuzurie/shopify/domain"
 	"github.com/nuzurie/shopify/utils/errors"
@@ -23,8 +24,8 @@ const (
 	updated_at timestamp without time zone
 	);`
 	getByID = `SELECT id, name, description, price, created_at, updated_at FROM public.item WHERE id=$1`
-	getAll = `SELECT id, name, description, price, created_at, updated_at FROM public.item WHERE $1 LIMIT $2 OFFSET $3`
-	save = `INSERT INTO public.item(id, name, description, price, created_at, updated_at) 
+	getAll  = `SELECT id, name, description, price, created_at, updated_at FROM public.item WHERE %s LIMIT $1 OFFSET $2`
+	save    = `INSERT INTO public.item(id, name, description, price, created_at, updated_at) 
 			VALUES ($1, $2, $3, $4, $5, $6)`
 	update = `UPDATE public.item
 	SET name=$2, description=$3, price=$4, updated_at=$5
@@ -54,7 +55,8 @@ func NewItemRepository(db *pgxpool.Pool) (domain.ItemRepository, error) {
 }
 
 func (i itemRepository) GetAll(ctx context.Context, count int, offset int, filter domain.Specification) ([]domain.Item, error) {
-	rows, err := i.db.Query(ctx, getAll, filter, count, offset)
+	rows, err := i.db.Query(ctx, fmt.Sprintf(getAll, filter.FilterQuery()), count, offset)
+	defer rows.Close()
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())
 	}

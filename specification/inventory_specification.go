@@ -15,7 +15,7 @@ func NewInventorySpecification(minQuantity, maxQuantity int, itemSpecification d
 
 	minQuantityQuery = fmt.Sprintf("quantity>=%d", minQuantity)
 	if maxQuantity == -1 {
-		maxQuntityQuery = "TRUE=TRUE"
+		maxQuntityQuery = "1=1"
 	} else {
 		maxQuntityQuery = fmt.Sprintf("quantity<=%d", maxQuantity)
 	}
