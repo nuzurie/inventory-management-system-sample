@@ -18,7 +18,7 @@ func NewItemHandler(useCase domain.ItemUseCase) *ItemHandler {
 	return &ItemHandler{useCase: useCase}
 }
 
-func (h *ItemHandler) GetAll(c *gin.Context)  {
+func (h *ItemHandler) GetAll(c *gin.Context) {
 	name, _ := c.GetQuery("name")
 	description, _ := c.GetQuery("description")
 	minPriceQuery, _ := c.GetQuery("min-price")
@@ -40,6 +40,8 @@ func (h *ItemHandler) GetAll(c *gin.Context)  {
 	var count int64
 	if countQuery, ok := c.GetQuery("count"); ok {
 		count, _ = strconv.ParseInt(countQuery, 10, 64)
+	} else {
+		count = 20
 	}
 
 	var offset int64
@@ -64,18 +66,11 @@ func (h *ItemHandler) GetAll(c *gin.Context)  {
 
 	c.JSON(http.StatusOK, items)
 }
-/*
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Price       float64   `json:"price"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-*/
+
 func (h *ItemHandler) Create(c *gin.Context) {
 	var item domain.Item
 	err := c.ShouldBind(&item)
-	if err != nil || reflect.DeepEqual(&domain.Item{}, item){
+	if err != nil || reflect.DeepEqual(&domain.Item{}, item) {
 		c.JSON(http.StatusBadRequest, errors.NewBadRequestError("invalid review body"))
 		return
 	}
@@ -105,7 +100,7 @@ func (h *ItemHandler) Update(c *gin.Context) {
 
 	var item domain.Item
 	err := c.ShouldBind(&item)
-	if err != nil || reflect.DeepEqual(&domain.Item{}, item){
+	if err != nil || reflect.DeepEqual(&domain.Item{}, item) {
 		c.JSON(http.StatusBadRequest, errors.NewBadRequestError("invalid review body"))
 		return
 	}
