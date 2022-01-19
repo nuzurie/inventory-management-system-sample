@@ -4,6 +4,9 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4/pgxpool"
+	http2 "github.com/nuzurie/shopify/inventory/delivery/http"
+	repository2 "github.com/nuzurie/shopify/inventory/repository"
+	usecase2 "github.com/nuzurie/shopify/inventory/usecase"
 	"github.com/nuzurie/shopify/item/delivery/http"
 	"github.com/nuzurie/shopify/item/repository"
 	"github.com/nuzurie/shopify/item/usecase"
@@ -12,9 +15,10 @@ import (
 	"time"
 )
 
-func Server(handler *http.ItemHandler) *gin.Engine {
+func Server(itemHandler *http.ItemHandler, inventoryHandler *http2.InventoryHandler) *gin.Engine {
 	router := gin.Default()
-	mapItemUrls(handler, router)
+	mapItemUrls(itemHandler, router)
+	mapInventoryUrls(inventoryHandler, router)
 	return router
 }
 
@@ -32,6 +36,13 @@ func Start() {
 	itemUseCase := usecase.NewItemUseCase(itemRepository, time.Second)
 	itemHandler := http.NewItemHandler(itemUseCase)
 
-	router := Server(itemHandler)
+	inventoryRepository, err := repository2.NewInventoryRepository(pool)
+	if err != nil {
+		log.Fatalln("Failed to initialize item table ", err)
+	}
+	inventoryUseCase := usecase2.NewInventoryUseCase(itemRepository, inventoryRepository, time.Second*300)
+	inventoryHandler := http2.NewInventoryHandler(inventoryUseCase)
+
+	router := Server(itemHandler, inventoryHandler)
 	router.Run()
 }
