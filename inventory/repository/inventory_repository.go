@@ -26,8 +26,8 @@ const (
 	getInventoryForItemID = `SELECT id, quantity, updated_at, item_id FROM public.inventory WHERE item_id=$1`
 	getAll                = `SELECT id, quantity, updated_at, item_id FROM public.inventory WHERE item_id IN (SELECT id 
 							 FROM public.item WHERE %s) AND %s LIMIT $1 OFFSET $2`
-	getByID               = `SELECT id, quantity, updated_at, item_id FROM public.inventory WHERE id=$1`
-	save                  = `INSERT INTO public.inventory (id, quantity, updated_at, item_id)
+	getByID = `SELECT id, quantity, updated_at, item_id FROM public.inventory WHERE id=$1`
+	save    = `INSERT INTO public.inventory (id, quantity, updated_at, item_id)
 			VALUES ($1, $2, $3, $4)`
 	update      = `UPDATE public.inventory SET quantity=$2, updated_at=$3 WHERE id=$1`
 	deleteForID = `DELETE FROM public.inventory WHERE id=$1`
@@ -106,7 +106,6 @@ func (i *inventoryRepository) GetByID(ctx context.Context, id string) (*domain.I
 
 func (i *inventoryRepository) GetAll(ctx context.Context, count int, offset int, filter domain.InventorySpecification) ([]domain.InventoryItem, error) {
 	rows, err := i.db.Query(ctx, fmt.Sprintf(getAll, filter.ItemFilterQuery(), filter.FilterQuery()), count, offset)
-	fmt.Println(fmt.Sprintf(getAll, filter.ItemFilterQuery(), filter.FilterQuery()))
 	defer rows.Close()
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())
@@ -139,7 +138,6 @@ func (i *inventoryRepository) Save(ctx context.Context, inventoryItem *domain.In
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx, save, inventoryItem.ID, inventoryItem.Quantity, inventoryItem.UpdatedAt, inventoryItem.Item.ID)
-	fmt.Println(save)
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())
 	}

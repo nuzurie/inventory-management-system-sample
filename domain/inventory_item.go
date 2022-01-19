@@ -13,6 +13,7 @@ type InventoryItem struct {
 }
 
 type InventoryUseCase interface {
+	// GetInventoryForItem to test if an item has any stock in the inventory
 	GetInventoryForItem(ctx context.Context, itemID string) (*InventoryItem, error)
 	GetAll(ctx context.Context, count int, offset int, filter InventorySpecification) ([]InventoryItem, error)
 	UpdateInventoryItem(ctx context.Context, item *InventoryItem) (*InventoryItem, error)

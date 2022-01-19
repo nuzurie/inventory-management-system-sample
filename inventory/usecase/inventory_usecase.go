@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/nuzurie/shopify/domain"
 	"github.com/nuzurie/shopify/utils/errors"
@@ -120,6 +119,7 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 	if inventory.ID == "" {
 		var existingItem *domain.Item
 		var err error
+		// check if item has id or is new
 		if inventory.Item.ID != "" {
 			existingItem, err = i.itemRepository.GetOne(c, inventory.Item.ID)
 			if err != nil {
@@ -129,6 +129,7 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 				return nil, errors.NewBadRequestError("no item with such ID exists")
 			}
 		}
+		// if no such item exists then create one and save it
 		if existingItem == nil || existingItem.ID == "" {
 			// create an item
 			inventory.Item.ID = uuid.NewString()
@@ -140,11 +141,13 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 		}
 	}
 
+	// this allows us to increase the number if item already exists in inventory instead of creating another
+	// entry for the same item
 	inv, err := i.inventoryRepository.GetInventoryForItem(c, inventory.Item.ID)
 	if err != nil {
 		return nil, err
 	}
-	if inventory.ID == ""  {
+	if inventory.ID == "" {
 		if (*inv).ID == "" {
 			inventory.ID = uuid.NewString()
 			return i.inventoryRepository.Save(c, inventory)
@@ -152,6 +155,7 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 			inventory.ID = inv.ID
 		}
 	}
+	// ensure we aren't trying to change the item. why must this ever happen?
 	if inv.ID != inventory.ID {
 		log.Println("error", inv.ID, inventory.ID)
 		return nil, errors.NewBadRequestError("invalid request. Can't change the item while updating")
@@ -159,7 +163,6 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 	if inventory.Quantity < 0 {
 		return nil, errors.NewBadRequestError("invalid request. Quantity can't be less than 0")
 	}
-	fmt.Println(inventory)
 	inventory.UpdatedAt = time.Now()
 	var updated *domain.InventoryItem
 	updated, err = i.inventoryRepository.Edit(c, inventory)
@@ -188,5 +191,6 @@ func (i *inventoryUseCase) DeleteItem(ctx context.Context, id string) error {
 		return errors.NewInternalServerError(err.Error())
 	}
 
+	// this is a design choice. Perhaps a bit iffy. In real life, it'd depend on what the client wants
 	return i.itemRepository.Delete(c, inventory.Item.ID)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/nuzurie/shopify/domain"
 	"github.com/nuzurie/shopify/utils/errors"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -156,6 +157,12 @@ func (i itemRepository) Delete(ctx context.Context, id string) error {
 
 	_, err = tx.Exec(ctx, deleteByID, id)
 	if err != nil {
+		//if pgerr, ok := err.(pgx.PgError); ok {
+		//	fmt.Println(pgerr)
+		//}
+		if strings.Contains(err.Error(), "inventory_item_id_fkey") {
+			return errors.NewBadRequestError("can't delete item while in inventory. Remove inventory first")
+		}
 		return errors.NewInternalServerError(err.Error())
 	}
 
