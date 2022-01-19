@@ -142,5 +142,5 @@ func (h *ItemHandler) Delete(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{"message": "deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "deleted successfully"})
 }

@@ -2,12 +2,12 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/nuzurie/shopify/domain"
 	"github.com/nuzurie/shopify/utils/errors"
 	"golang.org/x/sync/errgroup"
 	"log"
-	"reflect"
 	"time"
 )
 
@@ -17,7 +17,7 @@ type inventoryUseCase struct {
 	timeout             time.Duration
 }
 
-func NewItemUseCase(itemRepository domain.ItemRepository,
+func NewInventoryUseCase(itemRepository domain.ItemRepository,
 	inventoryRepository domain.InventoryRepository, timeout time.Duration) domain.InventoryUseCase {
 	return &inventoryUseCase{itemRepository: itemRepository, inventoryRepository: inventoryRepository, timeout: timeout}
 }
@@ -129,7 +129,7 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 				return nil, errors.NewBadRequestError("no item with such ID exists")
 			}
 		}
-		if reflect.DeepEqual(existingItem, &domain.Item{}) {
+		if existingItem == nil || existingItem.ID == "" {
 			// create an item
 			inventory.Item.ID = uuid.NewString()
 			inventory.Item.CreatedAt = time.Now()
@@ -138,24 +138,28 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 				return nil, err
 			}
 		}
-
-		inventory.ID = uuid.NewString()
-		inventory.UpdatedAt = time.Now()
-		created, err := i.inventoryRepository.Save(ctx, inventory)
-		if err != nil {
-			return nil, err
-		}
-		return created, nil
 	}
 
 	inv, err := i.inventoryRepository.GetInventoryForItem(c, inventory.Item.ID)
+	if err != nil {
+		return nil, err
+	}
+	if inventory.ID == ""  {
+		if (*inv).ID == "" {
+			inventory.ID = uuid.NewString()
+			return i.inventoryRepository.Save(c, inventory)
+		} else {
+			inventory.ID = inv.ID
+		}
+	}
 	if inv.ID != inventory.ID {
 		log.Println("error", inv.ID, inventory.ID)
 		return nil, errors.NewBadRequestError("invalid request. Can't change the item while updating")
 	}
-	if inv.Quantity < 0 {
+	if inventory.Quantity < 0 {
 		return nil, errors.NewBadRequestError("invalid request. Quantity can't be less than 0")
 	}
+	fmt.Println(inventory)
 	inventory.UpdatedAt = time.Now()
 	var updated *domain.InventoryItem
 	updated, err = i.inventoryRepository.Edit(c, inventory)
@@ -163,7 +167,7 @@ func (i *inventoryUseCase) UpdateInventoryItem(ctx context.Context, inventory *d
 		return nil, err
 	}
 
-	return updated, err
+	return updated, nil
 }
 
 func (i *inventoryUseCase) DeleteItem(ctx context.Context, id string) error {

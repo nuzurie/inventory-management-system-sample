@@ -15,7 +15,7 @@ func NewItemSpecification(name, description string,
 	if name == "" {
 		nameQuery = "1=1"
 	} else {
-		nameQuery = fmt.Sprintf("name ILIKE %%%s%%", name)
+		nameQuery = fmt.Sprintf("name ILIKE '%%%s%%'", name)
 	}
 
 	if description == "" {
