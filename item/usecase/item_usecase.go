@@ -99,5 +99,5 @@ func (i itemUseCase) Delete(ctx context.Context, id string) error {
 		return errors.NewBadRequestError("no such item exists")
 	}
 
-	return nil
+	return i.itemRepository.Delete(ctx, id)
 }

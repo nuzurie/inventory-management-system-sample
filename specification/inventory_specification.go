@@ -10,21 +10,26 @@ type InventorySpecification struct {
 	postgresQuery     string
 }
 
-func NewInventorySpecification(minQuantity, maxQuantity int, itemSpecification domain.Specification) domain.Specification {
-	var minQuantityQuery, maxQuntityQuery string
+func NewInventorySpecification(minQuantity, maxQuantity int,
+	itemSpecification domain.Specification) domain.InventorySpecification {
+	var minQuantityQuery, maxQuantityQuery string
 
 	minQuantityQuery = fmt.Sprintf("quantity>=%d", minQuantity)
 	if maxQuantity == -1 {
-		maxQuntityQuery = "1=1"
+		maxQuantityQuery = "1=1"
 	} else {
-		maxQuntityQuery = fmt.Sprintf("quantity<=%d", maxQuantity)
+		maxQuantityQuery = fmt.Sprintf("quantity<=%d", maxQuantity)
 	}
 
-	query := fmt.Sprintf("%s AND %s AND %s", itemSpecification.FilterQuery(), minQuantityQuery, maxQuntityQuery)
+	query := fmt.Sprintf("%s AND %s", minQuantityQuery, maxQuantityQuery)
 
 	return InventorySpecification{ItemSpecification: itemSpecification, postgresQuery: query}
 }
 
 func (i InventorySpecification) FilterQuery() string {
 	return i.postgresQuery
+}
+
+func (i InventorySpecification) ItemFilterQuery() string {
+	return i.ItemSpecification.FilterQuery()
 }

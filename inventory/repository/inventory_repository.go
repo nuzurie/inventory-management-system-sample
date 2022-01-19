@@ -24,11 +24,12 @@ const (
 	REFERENCES item(id)
 	)`
 	getInventoryForItemID = `SELECT id, quantity, updated_at, item_id WHERE item_id=$1`
-	getAll = `SELECT id, quantity, updated_at, item_id WHERE %s LIMIT $1 OFFSET $2`
-	save = `INSERT INTO public.inventory id, quantity, updated_at, item_id
+	getAll                = `SELECT id, quantity, updated_at WHERE item_id IN %s AND %s LIMIT $1 OFFSET $2`
+	getByID				  = `SELECT id, quantity, updated_at, item_id FROM public.inventory WHERE id=$1`
+	save                  = `INSERT INTO public.inventory id, quantity, updated_at, item_id
 			VALUES ($1, $2, $3, $4)`
-	update = `UPDATE public.inventory SET quantity=$2, updated_at=$3 WHERE id=$1`
-	deleteForItem = `DELETE FROM public.inventory WHERE item_id=$1`
+	update        = `UPDATE public.inventory SET quantity=$2, updated_at=$3 WHERE id=$1`
+	deleteForID = `DELETE FROM public.inventory WHERE id=$1`
 )
 
 func NewInventoryRepository(db *pgxpool.Pool) (domain.InventoryRepository, error) {
@@ -52,7 +53,7 @@ func NewInventoryRepository(db *pgxpool.Pool) (domain.InventoryRepository, error
 	return &inventoryRepository{db: db}, nil
 }
 
-func (i inventoryRepository) GetInventoryForItem(ctx context.Context, itemID string) (*domain.InventoryItem, error) {
+func (i *inventoryRepository) GetInventoryForItem(ctx context.Context, itemID string) (*domain.InventoryItem, error) {
 	rows, err := i.db.Query(ctx, getInventoryForItemID, itemID)
 	if err != nil {
 		err = errors.NewInternalServerError(err.Error())
@@ -77,8 +78,33 @@ func (i inventoryRepository) GetInventoryForItem(ctx context.Context, itemID str
 	return &inventory, nil
 }
 
-func (i inventoryRepository) GetAll(ctx context.Context, count int, offset int, filter domain.Specification) ([]domain.InventoryItem, error) {
-	rows, err := i.db.Query(ctx, fmt.Sprintf(getAll, filter.FilterQuery()), count, offset)
+func (i *inventoryRepository) GetByID(ctx context.Context, id string) (*domain.InventoryItem, error) {
+	rows, err := i.db.Query(ctx, getByID, id)
+	if err != nil {
+		err = errors.NewInternalServerError(err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var inventory domain.InventoryItem
+	for rows.Next() {
+		value, err := rows.Values()
+		if err != nil {
+			err = errors.NewInternalServerError(err.Error())
+			return nil, err
+		}
+
+		inventory.ID = value[0].(string)
+		inventory.Quantity = value[1].(int)
+		inventory.UpdatedAt = value[2].(time.Time)
+		inventory.Item.ID = value[3].(string)
+	}
+
+	return &inventory, nil
+}
+
+func (i *inventoryRepository) GetAll(ctx context.Context, count int, offset int, filter domain.InventorySpecification) ([]domain.InventoryItem, error) {
+	rows, err := i.db.Query(ctx, fmt.Sprintf(getAll, filter.ItemFilterQuery(), filter.FilterQuery()), count, offset)
 	defer rows.Close()
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())
@@ -103,7 +129,7 @@ func (i inventoryRepository) GetAll(ctx context.Context, count int, offset int, 
 	return inventoryItems, nil
 }
 
-func (i inventoryRepository) Save(ctx context.Context, inventoryItem *domain.InventoryItem) (*domain.InventoryItem, error) {
+func (i *inventoryRepository) Save(ctx context.Context, inventoryItem *domain.InventoryItem) (*domain.InventoryItem, error) {
 	tx, err := i.db.Begin(ctx)
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())
@@ -122,7 +148,7 @@ func (i inventoryRepository) Save(ctx context.Context, inventoryItem *domain.Inv
 	return inventoryItem, nil
 }
 
-func (i inventoryRepository) Edit(ctx context.Context, inventoryItem *domain.InventoryItem) (*domain.InventoryItem, error) {
+func (i *inventoryRepository) Edit(ctx context.Context, inventoryItem *domain.InventoryItem) (*domain.InventoryItem, error) {
 	tx, err := i.db.Begin(ctx)
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())
@@ -141,14 +167,14 @@ func (i inventoryRepository) Edit(ctx context.Context, inventoryItem *domain.Inv
 	return inventoryItem, nil
 }
 
-func (i inventoryRepository) DeleteItem(ctx context.Context, item *domain.InventoryItem) error {
+func (i *inventoryRepository) DeleteItem(ctx context.Context, id string) error {
 	tx, err := i.db.Begin(ctx)
 	if err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
 	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(ctx, deleteForItem, item.Item.ID)
+	_, err = tx.Exec(ctx, deleteForID, id)
 	if err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
