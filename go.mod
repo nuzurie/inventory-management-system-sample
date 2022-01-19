@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v4 v4.14.1
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 )
 
 require (
